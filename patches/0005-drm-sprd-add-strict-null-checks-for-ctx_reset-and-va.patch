@@ -1,0 +1,77 @@
+From cd79cb87a02e95c15406687e4e5c54f653206a29 Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 09:16:11 +0800
+Subject: [PATCH 5/7] drm: sprd: add strict null checks for ctx_reset and
+ vau_reset
+
+---
+ .../sprd_disp/qogirn6lite/global_dpu.c        | 28 +++++++------------
+ 1 file changed, 10 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c b/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
+index 7c3f75c7e..d8bfd38f9 100644
+--- a/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
++++ b/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
+@@ -496,21 +496,13 @@ static int dpu_glb_parse_dt(struct dpu_context *ctx,
+ 	struct resource r;
+ 
+ 	struct platform_device *pdev = of_find_device_by_node(np);
+-	struct device *rdev = pdev ? &pdev->dev : (ctx ? ctx->dev : NULL);
+-
+-	if (rdev) {
+-		ctx_reset = devm_reset_control_get_optional(rdev, "dpu_ctx_rst");
+-		if (IS_ERR(ctx_reset)) {
+-			pr_warn("read ctx_reset failed\n");
+-			ctx_reset = NULL;
+-		}
+-		vau_reset = devm_reset_control_get_optional(rdev, "dpu_vau_rst");
+-		if (IS_ERR(vau_reset)) {
+-			pr_warn("read vau_reset failed\n");
+-			vau_reset = NULL;
+-		}
++	if (pdev) {
++		ctx_reset = devm_reset_control_get_optional(&pdev->dev, "dpu_ctx_rst");
++		if (IS_ERR(ctx_reset)) ctx_reset = NULL;
++		vau_reset = devm_reset_control_get_optional(&pdev->dev, "dpu_vau_rst");
++		if (IS_ERR(vau_reset)) vau_reset = NULL;
+ 	} else {
+-		pr_warn("dpu_glb_parse_dt: rdev is NULL, bypass reset control\n");
++		pr_warn("dpu_glb_parse_dt: pdev is NULL, bypass reset control\n");
+ 		ctx_reset = NULL;
+ 		vau_reset = NULL;
+ 	}
+@@ -632,13 +624,13 @@ static void dpu_glb_disable(struct dpu_context *ctx)
+ 				(struct sprd_panel *)container_of(dpu->dsi->panel,
+ 				struct sprd_panel, base);
+ 
+-	if (!IS_ERR(vau_reset)) {
++	if (vau_reset && !IS_ERR(vau_reset)) {
+ 		reset_control_assert(vau_reset);
+ 		udelay(10);
+ 		reset_control_deassert(vau_reset);
+ 	}
+ 
+-	if (!IS_ERR(ctx_reset)) {
++	if (ctx_reset && !IS_ERR(ctx_reset)) {
+ 		reset_control_assert(ctx_reset);
+ 		udelay(10);
+ 		reset_control_deassert(ctx_reset);
+@@ -670,13 +662,13 @@ static void dpu_soc_qos_config(void)
+ 
+ static void dpu_reset(struct dpu_context *ctx)
+ {
+-	if (!IS_ERR(ctx_reset)) {
++	if (ctx_reset && !IS_ERR(ctx_reset)) {
+ 		reset_control_assert(ctx_reset);
+ 		udelay(10);
+ 		reset_control_deassert(ctx_reset);
+ 	}
+ 
+-	if (!IS_ERR(vau_reset)) {
++	if (vau_reset && !IS_ERR(vau_reset)) {
+ 		reset_control_assert(vau_reset);
+ 		udelay(10);
+ 		reset_control_deassert(vau_reset);
+-- 
+2.53.0
+

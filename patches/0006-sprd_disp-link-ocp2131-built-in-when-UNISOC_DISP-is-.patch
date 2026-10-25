@@ -1,0 +1,26 @@
+From 978f575fd65e1047f586114e401e45fb9f340d6a Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 09:30:39 +0800
+Subject: [PATCH 6/7] sprd_disp: link ocp2131 built-in when UNISOC_DISP is
+ built-in
+
+---
+ drivers/unisoc_platform/sprd_disp/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/unisoc_platform/sprd_disp/Makefile b/drivers/unisoc_platform/sprd_disp/Makefile
+index 9837e372d..2264f0f33 100755
+--- a/drivers/unisoc_platform/sprd_disp/Makefile
++++ b/drivers/unisoc_platform/sprd_disp/Makefile
+@@ -205,7 +205,7 @@ subdir-ccflags-y += -Wno-macro-redefined -Wno-frame-larger-than
+ # LCD bias chip (OCP2131), called from sprd_panel_prepare(). Built as its own
+ # module: it has its own module_init, so listing it in sprd-drm-y would
+ # duplicate init_module/cleanup_module.
+-obj-m += lcd_bias/ocp2131.o
++obj-$(CONFIG_UNISOC_DISP) += lcd_bias/ocp2131.o
+ 
+ # GSP: referenced by sprd_drm ioctls and the panel path. The out-of-tree flow
+ # builds sprd-gsp.ko on its own, but gsp/Kbuild ends with
+-- 
+2.53.0
+

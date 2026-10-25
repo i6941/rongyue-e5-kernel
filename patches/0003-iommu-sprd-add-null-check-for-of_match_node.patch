@@ -1,0 +1,33 @@
+From 6e7f32d6c4c87d9e08df1193023ef3e632828b81 Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 09:00:26 +0800
+Subject: [PATCH 3/7] iommu: sprd: add null check for of_match_node
+
+---
+ drivers/unisoc_platform/iommu/sprd_iommu.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/unisoc_platform/iommu/sprd_iommu.c b/drivers/unisoc_platform/iommu/sprd_iommu.c
+index 6364834a5..ea739607c 100644
+--- a/drivers/unisoc_platform/iommu/sprd_iommu.c
++++ b/drivers/unisoc_platform/iommu/sprd_iommu.c
+@@ -1838,8 +1838,14 @@ static int sprd_iommu_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	pdata->id = (int)((enum IOMMU_ID)
+-		((of_match_node(sprd_iommu_ids, np))->data));
++	const struct of_device_id *match = of_match_node(sprd_iommu_ids, np);
++	if (!match) {
++		IOMMU_ERR("no match for iommu node: %s\n", np ? np->name : "null");
++		kfree(pdata);
++		kfree(iommu_dev);
++		return -ENODEV;
++	}
++	pdata->id = (int)((enum IOMMU_ID)(match->data));
+ 
+ 	switch (pdata->id) {
+ 	/*for sharkle iommu*/
+-- 
+2.53.0
+

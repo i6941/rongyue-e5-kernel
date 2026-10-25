@@ -1,0 +1,50 @@
+From 617e5dca5848d9d06de9704a0398baf950589708 Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 09:12:56 +0800
+Subject: [PATCH 4/7] drm: sprd: fix dpu_glb_parse_dt null pdev dereference
+
+---
+ .../sprd_disp/qogirn6lite/global_dpu.c        | 26 ++++++++++++-------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c b/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
+index c31ddc2bf..7c3f75c7e 100644
+--- a/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
++++ b/drivers/unisoc_platform/sprd_disp/qogirn6lite/global_dpu.c
+@@ -496,17 +496,23 @@ static int dpu_glb_parse_dt(struct dpu_context *ctx,
+ 	struct resource r;
+ 
+ 	struct platform_device *pdev = of_find_device_by_node(np);
++	struct device *rdev = pdev ? &pdev->dev : (ctx ? ctx->dev : NULL);
+ 
+-	ctx_reset = devm_reset_control_get(&pdev->dev, "dpu_ctx_rst");
+-	if (IS_ERR(ctx_reset)) {
+-		pr_warn("read ctx_reset failed\n");
+-		return PTR_ERR(ctx_reset);
+-	}
+-
+-	vau_reset = devm_reset_control_get(&pdev->dev, "dpu_vau_rst");
+-	if (IS_ERR(vau_reset)) {
+-		pr_warn("read vau_reset failed\n");
+-		return PTR_ERR(vau_reset);
++	if (rdev) {
++		ctx_reset = devm_reset_control_get_optional(rdev, "dpu_ctx_rst");
++		if (IS_ERR(ctx_reset)) {
++			pr_warn("read ctx_reset failed\n");
++			ctx_reset = NULL;
++		}
++		vau_reset = devm_reset_control_get_optional(rdev, "dpu_vau_rst");
++		if (IS_ERR(vau_reset)) {
++			pr_warn("read vau_reset failed\n");
++			vau_reset = NULL;
++		}
++	} else {
++		pr_warn("dpu_glb_parse_dt: rdev is NULL, bypass reset control\n");
++		ctx_reset = NULL;
++		vau_reset = NULL;
+ 	}
+ 
+ 	clk_dpuvsp_eb =
+-- 
+2.53.0
+

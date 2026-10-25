@@ -1,0 +1,25 @@
+From 96eb6ded178da9644c48db070af2513c766232c8 Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 08:10:03 +0800
+Subject: [PATCH 2/7] sprd: fix vpu pd probe null check
+
+---
+ drivers/soc/sprd/domain/sprd_vpu_pw_domain.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/sprd/domain/sprd_vpu_pw_domain.c b/drivers/soc/sprd/domain/sprd_vpu_pw_domain.c
+index d5d8624d3..f76edc02a 100755
+--- a/drivers/soc/sprd/domain/sprd_vpu_pw_domain.c
++++ b/drivers/soc/sprd/domain/sprd_vpu_pw_domain.c
+@@ -248,7 +248,7 @@ static int vpu_pd_probe(struct platform_device *pdev)
+ 	 * The node's full name ("power-domain@1"): all the nodes are named
+ 	 * "power-domain", and on 6.18 genpd registers a device by this name.
+ 	 */
+-	pd->gpd.name = kstrdup(np->full_name, GFP_KERNEL);
++	pd->gpd.name = (np && np->full_name) ? kstrdup(np->full_name, GFP_KERNEL) : NULL; if (!pd->gpd.name) pd->gpd.name = dev_name(dev) ? dev_name(dev) : "vpu_pd";
+ 	pd->gpd.power_off = vpu_pw_off;
+ 	pd->gpd.power_on = vpu_pw_on;
+ 
+-- 
+2.53.0
+

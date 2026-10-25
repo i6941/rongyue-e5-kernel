@@ -1,0 +1,70 @@
+From a278bfc8e6a177ab6a7ba146e09faada3e16df87 Mon Sep 17 00:00:00 2001
+From: E5 Developer <dev@e5.local>
+Date: Sun, 25 Oct 2026 09:49:05 +0800
+Subject: [PATCH 7/7] drm: sprd: qogirn6pro: clean fix for reset_control
+
+---
+ .../sprd_disp/qogirn6pro/global_dpu.c         | 22 +++++++------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/unisoc_platform/sprd_disp/qogirn6pro/global_dpu.c b/drivers/unisoc_platform/sprd_disp/qogirn6pro/global_dpu.c
+index 77b604c25..dcda3ca74 100644
+--- a/drivers/unisoc_platform/sprd_disp/qogirn6pro/global_dpu.c
++++ b/drivers/unisoc_platform/sprd_disp/qogirn6pro/global_dpu.c
+@@ -321,17 +321,11 @@ static int dpu_glb_parse_dt(struct dpu_context *ctx,
+ {
+ 	struct platform_device *pdev = of_find_device_by_node(np);
+ 
+-	ctx_reset = devm_reset_control_get(&pdev->dev, "dpu_ctx_rst");
+-	if (IS_ERR(ctx_reset)) {
+-		pr_warn("read ctx_reset failed\n");
+-		return PTR_ERR(ctx_reset);
+-	}
++	ctx_reset = pdev ? devm_reset_control_get_optional(&pdev->dev, "dpu_ctx_rst") : NULL;
++	if (IS_ERR(ctx_reset)) ctx_reset = NULL;
+ 
+-	vau_reset = devm_reset_control_get(&pdev->dev, "dpu_vau_rst");
+-	if (IS_ERR(vau_reset)) {
+-		pr_warn("read vau_reset failed\n");
+-		return PTR_ERR(vau_reset);
+-	}
++	vau_reset = pdev ? devm_reset_control_get_optional(&pdev->dev, "dpu_vau_rst") : NULL;
++	if (IS_ERR(vau_reset)) vau_reset = NULL;
+ 
+ 	clk_dpuvsp_eb =
+ 		of_clk_get_by_name(np, "clk_dpuvsp_eb");
+@@ -382,13 +376,13 @@ static void dpu_glb_enable(struct dpu_context *ctx)
+ 
+ static void dpu_glb_disable(struct dpu_context *ctx)
+ {
+-	if (!IS_ERR(vau_reset)) {
++	if (vau_reset && !IS_ERR(vau_reset)) {
+ 		reset_control_assert(vau_reset);
+ 		udelay(10);
+ 		reset_control_deassert(vau_reset);
+ 	}
+ 
+-	if (!IS_ERR(ctx_reset)) {
++	if (ctx_reset && !IS_ERR(ctx_reset)) {
+ 		reset_control_assert(ctx_reset);
+ 		udelay(10);
+ 		reset_control_deassert(ctx_reset);
+@@ -400,13 +394,13 @@ static void dpu_glb_disable(struct dpu_context *ctx)
+ 
+ static void dpu_reset(struct dpu_context *ctx)
+ {
+-	if (!IS_ERR(ctx_reset)) {
++	if (ctx_reset && !IS_ERR(ctx_reset)) {
+ 		reset_control_assert(ctx_reset);
+ 		udelay(10);
+ 		reset_control_deassert(ctx_reset);
+ 	}
+ 
+-	if (!IS_ERR(vau_reset)) {
++	if (vau_reset && !IS_ERR(vau_reset)) {
+ 		reset_control_assert(vau_reset);
+ 		udelay(10);
+ 		reset_control_deassert(vau_reset);
+-- 
+2.53.0
+

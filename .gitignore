@@ -1,0 +1,8 @@
+*.img
+*.tar.gz
+*.bin
+*.o
+*.ko
+__pycache__/
+.DS_Store
+*.bak
